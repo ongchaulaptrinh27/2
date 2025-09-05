@@ -6,7 +6,6 @@
     <title>Nạp Tiền - sang_dev</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Copy style từ index.html */
         :root {
             --primary: #6c5ce7;
             --secondary: #a29bfe;
@@ -73,13 +72,18 @@
             background: var(--secondary);
             color: white;
         }
+        .error {
+            color: var(--danger);
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
         <h2>Nạp Tiền</h2>
+        <div id="error" class="error"></div>
         <p>Liên hệ admin: <a href="https://www.facebook.com/profile.php?id=61574167490098">Facebook</a></p>
-        <img src="YOUR_QR_CODE_LINK" alt="QR Code" class="qr-code" /> <!-- Thay YOUR_QR_CODE_LINK -->
+        <img src="/admin.jpg" alt="QR Code" class="qr-code" /> <!-- Thay bằng link QR thật -->
         <p>Ngân hàng: Vietcombank</p>
         <p>Tài khoản: Nguyen Hong Sang</p>
         <input id="amount" type="number" placeholder="Số tiền nạp" />
@@ -92,48 +96,57 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const response = await fetch('/deposit/history');
-        if (!response.ok) {
-            alert('Vui lòng đăng nhập để nạp tiền');
-            window.location.href = '/login.html';
-        } else {
-            loadDepositHistory();
-        }
-    } catch (error) {
-        alert('Lỗi kết nối server');
-        window.location.href = '/login.html';
-    }
-});
+            try {
+                const response = await fetch('/api/deposit-history');
+                if (!response.ok) {
+                    document.getElementById('error').textContent = 'Vui lòng đăng nhập để nạp tiền';
+                    setTimeout(() => window.location.href = '/login.html', 2000);
+                } else {
+                    loadDepositHistory();
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = 'Lỗi kết nối server';
+                setTimeout(() => window.location.href = '/login.html', 2000);
+            }
+        });
+
         async function submitDeposit() {
             const amount = parseInt(document.getElementById('amount').value);
+            const errorDiv = document.getElementById('error');
             if (!amount || amount <= 0) {
-                alert('Vui lòng nhập số tiền hợp lệ');
+                errorDiv.textContent = 'Vui lòng nhập số tiền hợp lệ';
                 return;
             }
-            const response = await fetch('/deposit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
-            });
-            const data = await response.json();
-            alert(data.message || data.error);
-            if (data.message) loadDepositHistory();
+            try {
+                const response = await fetch('/api/deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount })
+                });
+                const data = await response.json();
+                errorDiv.textContent = data.message || data.error;
+                if (data.message) loadDepositHistory();
+            } catch (error) {
+                errorDiv.textContent = 'Lỗi kết nối server';
+            }
         }
 
         async function loadDepositHistory() {
-            const response = await fetch('/deposit/history');
-            const deposits = await response.json();
-            const depositHistory = document.getElementById('depositHistory');
-            depositHistory.innerHTML = '';
-            deposits.forEach(d => {
-                const li = document.createElement('li');
-                li.textContent = `Số tiền: ${d.amount} - Trạng thái: ${d.status} - ${new Date(d.createdAt).toLocaleString()}`;
-                depositHistory.appendChild(li);
-            });
+            try {
+                const response = await fetch('/api/deposit-history');
+                if (!response.ok) throw new Error('Lỗi tải lịch sử');
+                const deposits = await response.json();
+                const depositHistory = document.getElementById('depositHistory');
+                depositHistory.innerHTML = '';
+                deposits.forEach(d => {
+                    const li = document.createElement('li');
+                    li.textContent = `Số tiền: ${d.amount} VNĐ - Trạng thái: ${d.status} - ${new Date(d.createdAt).toLocaleString()}`;
+                    depositHistory.appendChild(li);
+                });
+            } catch (error) {
+                document.getElementById('error').textContent = 'Lỗi tải lịch sử nạp tiền';
+            }
         }
-
-        document.addEventListener('DOMContentLoaded', loadDepositHistory);
     </script>
 </body>
 </html>
