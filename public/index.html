@@ -858,7 +858,7 @@
 
         // 👉 Fetch sản phẩm từ API
         async function fetchProducts(page, category) {
-            const response = await fetch(`/api/products?page=${page}&category=${category}`);
+            const response = await fetch('/api/products?page=${page}&category=${category}')
             const data = await response.json();
             displayProducts(data.products);
             // Cập nhật phân trang dựa trên totalPages từ data nếu cần
@@ -998,7 +998,6 @@
             document.getElementById('productModal').style.display = 'flex';
         }
     </script>
-    <link rel="stylesheet" href="https://dichvuright.com/cdn-2-9/2-9.css?v=1.0.0">
-    <script src="https://dichvuright.com/cdn-2-9/2-9.js?v=1.0.0" defer=""></script>
+    
 </body>
 </html>
