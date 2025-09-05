@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nạp Tiền - sang_dev</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Copy style từ index.html */
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --accent: #fd79a8;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #d63031;
+        }
+        body {
+            background-color: #f9f9f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2rem;
+        }
+        .form-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
+            text-align: center;
+        }
+        .form-container input, .form-container button {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .form-container button {
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+        }
+        .qr-code {
+            display: block;
+            margin: 1rem auto;
+            width: 200px;
+        }
+        .deposit-history {
+            margin-top: 2rem;
+        }
+        .deposit-history ul {
+            list-style: none;
+            padding: 0;
+        }
+        .deposit-history li {
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+        .btn-back {
+            background: var(--secondary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Nạp Tiền</h2>
+        <p>Liên hệ admin: <a href="https://www.facebook.com/profile.php?id=61574167490098">Facebook</a></p>
+        <img src="YOUR_QR_CODE_LINK" alt="QR Code" class="qr-code" /> <!-- Thay YOUR_QR_CODE_LINK -->
+        <p>Ngân hàng: Vietcombank</p>
+        <p>Tài khoản: Nguyen Hong Sang</p>
+        <input id="amount" type="number" placeholder="Số tiền nạp" />
+        <button onclick="submitDeposit()">Gửi Yêu Cầu</button>
+        <div class="deposit-history">
+            <h3>Lịch Sử Nạp Tiền</h3>
+            <ul id="depositHistory"></ul>
+        </div>
+        <a href="/" class="btn btn-back">Quay lại trang chính</a>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const response = await fetch('/deposit/history');
+        if (!response.ok) {
+            alert('Vui lòng đăng nhập để nạp tiền');
+            window.location.href = '/login.html';
+        } else {
+            loadDepositHistory();
+        }
+    } catch (error) {
+        alert('Lỗi kết nối server');
+        window.location.href = '/login.html';
+    }
+});
+        async function submitDeposit() {
+            const amount = parseInt(document.getElementById('amount').value);
+            if (!amount || amount <= 0) {
+                alert('Vui lòng nhập số tiền hợp lệ');
+                return;
+            }
+            const response = await fetch('/deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            });
+            const data = await response.json();
+            alert(data.message || data.error);
+            if (data.message) loadDepositHistory();
+        }
+
+        async function loadDepositHistory() {
+            const response = await fetch('/deposit/history');
+            const deposits = await response.json();
+            const depositHistory = document.getElementById('depositHistory');
+            depositHistory.innerHTML = '';
+            deposits.forEach(d => {
+                const li = document.createElement('li');
+                li.textContent = `Số tiền: ${d.amount} - Trạng thái: ${d.status} - ${new Date(d.createdAt).toLocaleString()}`;
+                depositHistory.appendChild(li);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDepositHistory);
+    </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - sang_dev</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Copy style từ index.html */
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --accent: #fd79a8;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --danger: #d63031;
+        }
+        body {
+            background-color: #f9f9f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .admin-section {
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.07);
+        }
+        .admin-section input, .admin-section button {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .admin-section button {
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+        }
+        .admin-list {
+            list-style: none;
+            padding: 0;
+        }
+        .admin-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-left: 1rem;
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Admin Panel</h2>
+        
+        <div class="admin-section">
+            <h3>Thêm Sản Phẩm</h3>
+            <input id="title" placeholder="Tên sản phẩm" />
+            <input id="imageUrl" placeholder="Link ảnh" />
+            <input id="fileUrl" placeholder="Link tải về" />
+            <input id="demoUrl" placeholder="Link demo" />
+            <input id="price" placeholder="Giá (e.g. 100.000)" />
+            <button onclick="addProduct()">Thêm</button>
+        </div>
+        
+        <div class="admin-section">
+            <h3>Danh Sách Sản Phẩm</h3>
+            <ul id="productList" class="admin-list"></ul>
+        </div>
+        
+        <div class="admin-section">
+            <h3>Danh Sách Tài Khoản</h3>
+            <ul id="userList" class="admin-list"></ul>
+        </div>
+        
+        <div class="admin-section">
+            <h3>Yêu Cầu Nạp Tiền</h3>
+            <ul id="depositList" class="admin-list"></ul>
+        </div>
+    </div>
+    <script>
+        async function loadAdminData() {
+            try {
+                // Load products
+                const productsRes = await fetch('/admin/products');
+                if (!productsRes.ok) throw new Error('Không thể lấy danh sách sản phẩm');
+                const products = await productsRes.json();
+                const productList = document.getElementById('productList');
+                productList.innerHTML = '';
+                products.forEach(p => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${p.title} (Giá: ${p.price}) <button class="btn btn-danger" onclick="deleteProduct(${p.id})">Xóa</button>`;
+                    productList.appendChild(li);
+                });
+
+                // Load users
+                const usersRes = await fetch('/admin/users');
+                if (!usersRes.ok) throw new Error('Không thể lấy danh sách tài khoản');
+                const users = await usersRes.json();
+                const userList = document.getElementById('userList');
+                userList.innerHTML = '';
+                users.forEach(u => {
+                    const li = document.createElement('li');
+                    li.textContent = `${u.username} - Balance: ${u.balance} VNĐ`;
+                    userList.appendChild(li);
+                });
+
+                // Load deposits
+                const depositsRes = await fetch('/admin/deposits');
+                if (!depositsRes.ok) throw new Error('Không thể lấy danh sách yêu cầu nạp');
+                const deposits = await depositsRes.json();
+                const depositList = document.getElementById('depositList');
+                depositList.innerHTML = '';
+                deposits.forEach(d => {
+                    if (d.status === 'pending') {
+                        const li = document.createElement('li');
+                        li.innerHTML = `User: ${d.username} - Số tiền: ${d.amount} VNĐ - ${new Date(d.createdAt).toLocaleString()} 
+                            <button class="btn btn-success" onclick="approveDeposit('${d.id}')">Chấp nhận</button> 
+                            <button class="btn btn-danger" onclick="rejectDeposit('${d.id}')">Từ chối</button>`;
+                        depositList.appendChild(li);
+                    }
+                });
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function addProduct() {
+            const title = document.getElementById('title').value;
+            const imageUrl = document.getElementById('imageUrl').value;
+            const fileUrl = document.getElementById('fileUrl').value;
+            const demoUrl = document.getElementById('demoUrl').value;
+            const price = document.getElementById('price').value;
+            if (!title || !imageUrl || !fileUrl || !demoUrl || !price) {
+                alert('Vui lòng điền đầy đủ thông tin');
+                return;
+            }
+            try {
+                const response = await fetch('/admin/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, imageUrl, fileUrl, demoUrl, price })
+                });
+                if (!response.ok) throw new Error('Thêm sản phẩm thất bại');
+                loadAdminData();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function deleteProduct(id) {
+            try {
+                const response = await fetch(`/admin/products/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Xóa sản phẩm thất bại');
+                loadAdminData();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function approveDeposit(id) {
+            try {
+                const response = await fetch(`/admin/deposits/${id}/approve`, { method: 'POST' });
+                if (!response.ok) throw new Error('Duyệt yêu cầu thất bại');
+                loadAdminData();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function rejectDeposit(id) {
+            try {
+                const response = await fetch(`/admin/deposits/${id}/reject`, { method: 'POST' });
+                if (!response.ok) throw new Error('Từ chối yêu cầu thất bại');
+                loadAdminData();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAdminData);
+    </script>
+</body>
+</html>
