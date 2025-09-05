@@ -6,7 +6,6 @@
     <title>Admin Panel - sang_dev</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Copy style từ index.html */
         :root {
             --primary: #6c5ce7;
             --secondary: #a29bfe;
@@ -71,11 +70,17 @@
             background: var(--success);
             color: white;
         }
+        .error {
+            color: var(--danger);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Admin Panel</h2>
+        <div id="error" class="error"></div>
         
         <div class="admin-section">
             <h3>Thêm Sản Phẩm</h3>
@@ -101,12 +106,23 @@
             <h3>Yêu Cầu Nạp Tiền</h3>
             <ul id="depositList" class="admin-list"></ul>
         </div>
+        
+        <a href="/" class="btn btn-back">Quay lại trang chính</a>
     </div>
     <script>
         async function loadAdminData() {
+            const errorDiv = document.getElementById('error');
             try {
+                // Kiểm tra đăng nhập và quyền admin
+                const checkResponse = await fetch('/api/admin-products');
+                if (!checkResponse.ok) {
+                    errorDiv.textContent = 'Vui lòng đăng nhập với tài khoản admin';
+                    setTimeout(() => window.location.href = '/login.html', 2000);
+                    return;
+                }
+
                 // Load products
-                const productsRes = await fetch('/admin/products');
+                const productsRes = await fetch('/api/admin-products');
                 if (!productsRes.ok) throw new Error('Không thể lấy danh sách sản phẩm');
                 const products = await productsRes.json();
                 const productList = document.getElementById('productList');
@@ -118,19 +134,19 @@
                 });
 
                 // Load users
-                const usersRes = await fetch('/admin/users');
+                const usersRes = await fetch('/api/admin-users');
                 if (!usersRes.ok) throw new Error('Không thể lấy danh sách tài khoản');
                 const users = await usersRes.json();
                 const userList = document.getElementById('userList');
                 userList.innerHTML = '';
                 users.forEach(u => {
                     const li = document.createElement('li');
-                    li.textContent = `${u.username} - Balance: ${u.balance} VNĐ`;
+                    li.textContent = `${u.username} - Số dư: ${u.balance} VNĐ`;
                     userList.appendChild(li);
                 });
 
                 // Load deposits
-                const depositsRes = await fetch('/admin/deposits');
+                const depositsRes = await fetch('/api/admin-deposits');
                 if (!depositsRes.ok) throw new Error('Không thể lấy danh sách yêu cầu nạp');
                 const deposits = await depositsRes.json();
                 const depositList = document.getElementById('depositList');
@@ -145,7 +161,8 @@
                     }
                 });
             } catch (error) {
-                alert(error.message);
+                errorDiv.textContent = error.message || 'Lỗi kết nối server';
+                setTimeout(() => window.location.href = '/login.html', 2000);
             }
         }
 
@@ -155,50 +172,62 @@
             const fileUrl = document.getElementById('fileUrl').value;
             const demoUrl = document.getElementById('demoUrl').value;
             const price = document.getElementById('price').value;
+            const errorDiv = document.getElementById('error');
             if (!title || !imageUrl || !fileUrl || !demoUrl || !price) {
-                alert('Vui lòng điền đầy đủ thông tin');
+                errorDiv.textContent = 'Vui lòng điền đầy đủ thông tin';
                 return;
             }
             try {
-                const response = await fetch('/admin/products', {
+                const response = await fetch('/api/admin-products', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title, imageUrl, fileUrl, demoUrl, price })
                 });
                 if (!response.ok) throw new Error('Thêm sản phẩm thất bại');
+                const data = await response.json();
+                errorDiv.textContent = data.message;
                 loadAdminData();
             } catch (error) {
-                alert(error.message);
+                errorDiv.textContent = error.message || 'Lỗi kết nối server';
             }
         }
 
         async function deleteProduct(id) {
+            const errorDiv = document.getElementById('error');
             try {
-                const response = await fetch(`/admin/products/${id}`, { method: 'DELETE' });
+                const response = await fetch(`/api/admin-products?id=${id}`, { method: 'DELETE' });
                 if (!response.ok) throw new Error('Xóa sản phẩm thất bại');
+                const data = await response.json();
+                errorDiv.textContent = data.message;
                 loadAdminData();
             } catch (error) {
-                alert(error.message);
+                errorDiv.textContent = error.message || 'Lỗi kết nối server';
             }
         }
 
         async function approveDeposit(id) {
+            const errorDiv = document.getElementById('error');
             try {
-                const response = await fetch(`/admin/deposits/${id}/approve`, { method: 'POST' });
+                const response = await fetch(`/api/admin-deposits?id=${id}&action=approve`, { method: 'POST' });
                 if (!response.ok) throw new Error('Duyệt yêu cầu thất bại');
+                const data = await response.json();
+                errorDiv.textContent = data.message;
                 loadAdminData();
             } catch (error) {
-                alert(error.message);
+                errorDiv.textContent = error.message || 'Lỗi kết nối server';
             }
         }
 
         async function rejectDeposit(id) {
+            const errorDiv = document.getElementById('error');
             try {
-                const response = await fetch(`/admin/deposits/${id}/reject`, { method: 'POST' });
+                const response = await fetch(`/api/admin-deposits?id=${id}&action=reject`, { method: 'POST' });
                 if (!response.ok) throw new Error('Từ chối yêu cầu thất bại');
+                const data = await response.json();
+                errorDiv.textContent = data.message;
                 loadAdminData();
             } catch (error) {
-                alert(error.message);
+                errorDiv.textContent = error.message || 'Lỗi kết nối server';
             }
         }
 
