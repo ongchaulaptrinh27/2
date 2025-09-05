@@ -1,0 +1,17 @@
+[
+    {
+        "id": 1,
+        "title": "Sản phẩm mẫu",
+        "description": "Mô tả ngắn",
+        "detailedDescription": "Mô tả chi tiết",
+        "price": "100.000",
+        "demoUrl": "https://example.com/demo",
+        "fileUrl": "https://example.com/download",
+        "imageUrl": "https://via.placeholder.com/400x300",
+        "category": ["all", "free"],
+        "features": ["Tính năng 1", "Tính năng 2"],
+        "rating": 4.5,
+        "downloads": 100,
+        "pinned": false
+    }
+]

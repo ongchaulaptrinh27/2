@@ -1,0 +1,10 @@
+[
+    {
+        "id": "admin-1",
+        "username": "sangdev",
+        "password": "$2b$10$3f6bZ4Qz9y7k8z5X6c9y6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t", 
+        "balance": 0,
+        "role": "admin",
+        "token": ""
+    }
+]
